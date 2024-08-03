@@ -41,3 +41,21 @@ dragDropArea.addEventListener("drop", (e) => {
         reader.readAsDataURL(file);
     }
 });
+
+function drawImages(images) {
+    // Clear the canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  
+    // Iterate through the images
+    images.forEach((img, index) => {
+      // Calculate the dimensions to maintain aspect ratio
+      const ratio = Math.min(canvas.width / img.width, canvas.height / img.height);
+      const width = img.width * ratio;
+      const height = img.height * ratio;
+      const x = (canvas.width - width) / 2;
+      const y = (canvas.height - height) / 2;
+  
+      // Draw the image onto the canvas
+      ctx.drawImage(img, x, y, width, height);
+    });
+  }
