@@ -1,6 +1,7 @@
 console.log("sanity check");
 const dragDropArea = document.getElementById("dragDropArea");
-const output = document.getElementById("output");
+const canvas = document.getElementById("myCanvas");
+const ctx = canvas.getContext("2d");
 
 // Step 1 - Add an event listener for the dragover event
 dragDropArea.addEventListener("dragover", (e) => {
@@ -18,21 +19,19 @@ dragDropArea.addEventListener("drop", (e) => {
         alert("No files selected.");
         return;
     }
-    output.innerHTML = "";
 
     for (const file of files) {
         if (!file.type.startsWith("image/")) {
             alert("Only image files are allowed.");
             return;
         }
+        let img = new Image();
         const reader = new FileReader();
         reader.onload = (e) => {
-            const img = document.createElement("img");
-            img.src = e.target.result;
-            img.onload = function() {
-                console.log(img.width, img.height);
-            };
-            output.appendChild(img);
+            img.src = e.target.result; // Set the image source to the file data
+        };
+        img.onload = function() {
+            drawImages([img]);
         };
         reader.onerror = (err) => {
             console.error("Error reading file:", err);
@@ -56,6 +55,8 @@ function drawImages(images) {
       const y = (canvas.height - height) / 2;
   
       // Draw the image onto the canvas
-      ctx.drawImage(img, x, y, width, height);
+    //   ctx.drawImage(img, x, y, width, height);
+
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
     });
-  }
+}
