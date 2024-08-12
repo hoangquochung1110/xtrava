@@ -2,6 +2,8 @@ import './style.css'
 import javascriptLogo from './javascript.svg'
 import viteLogo from '/vite.svg'
 import { setupCounter } from './counter.js'
+import domtoimage from 'dom-to-image';
+import * as htmlToImage from 'html-to-image';
 
 
 console.log("sanity check");
@@ -24,7 +26,7 @@ dragDropArea.addEventListener("drop", (e) => {
         alert("No files selected.");
         return;
     }
-    output.innerHTML = "";
+    // output.innerHTML = "";
 
     for (const file of files) {
         if (!file.type.startsWith("image/")) {
@@ -43,4 +45,16 @@ dragDropArea.addEventListener("drop", (e) => {
         };
         reader.readAsDataURL(file);
     }
+});
+
+document.getElementById('capture-btn').addEventListener('click', function() {
+    const node = document.getElementById('output');
+
+    htmlToImage.toJpeg(document.getElementById('output'), { quality: 0.95 })
+    .then(function (dataUrl) {
+      var link = document.createElement('a');
+      link.download = 'my-image-name.jpeg';
+      link.href = dataUrl;
+      link.click();
+    });
 });
