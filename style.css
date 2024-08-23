@@ -1,6 +1,7 @@
 :root {
   --drag-drop-area--height: 20lvh;
 }
+
 body {
   margin: 0;
   font-family: Arial, sans-serif;
@@ -30,16 +31,17 @@ body {
   display: flex; /* Enable flexbox for image */
   align-items: center; /* Center image vertically */
   justify-content: center; /* Center image horizontally */
+  flex-direction: column;
   max-height: calc(100% - var(--drag-drop-area--height));
 }
 
 .box3 img {
+  aspect-ratio: 3/2;
   max-height: 100%; /* Ensures the image does not exceed the height of the box */
   max-width: 100%;
-  height: auto;
+  height: 100%;
   width: auto;
   object-fit: contain; /* Maintains aspect ratio while fitting within the box */
-  align-self: flex-end;
 }
 
 .box4 {
@@ -47,13 +49,13 @@ body {
 }
 
 #decorator {
-  position: absolute;
+  position: relative  ;
   max-height: 100%; /* Ensures the image does not exceed the height of the box */
   max-width: 100%;
   height: auto;
   width: 100%;
   align-self: flex-end;
-  background-image: url("/static/night.jpg");
+  top: -100px;
 }
 
 .grid-container {

@@ -37,7 +37,7 @@ dragDropArea.addEventListener("drop", (e) => {
         reader.onload = (e) => {
             const img = document.createElement("img");
             img.src = e.target.result;
-            output.appendChild(img);
+            output.prepend(img);
         };
         reader.onerror = (err) => {
             console.error("Error reading file:", err);
