@@ -38,7 +38,11 @@ export default function Component() {
   const [elevationGain, setElevationGain] = useState('')
   const [selectedFont, setSelectedFont] = useState('arial')
   const [overlayPosition, setOverlayPosition] = useState('bottom')
+  const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 })
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const imageRef = useRef<HTMLDivElement>(null)
+  const isDragging = useRef(false)
+  const dragStart = useRef({ x: 0, y: 0 })
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -52,6 +56,7 @@ export default function Component() {
         0,
         (uri) => {
           setImage(uri as string)
+          setImagePosition({ x: 0, y: 0 }) // Reset position when new image is uploaded
         },
         'base64'
       )
@@ -63,7 +68,7 @@ export default function Component() {
   }
 
   const getOverlayStyle = () => {
-    const baseStyle = "absolute text-white p-4 rounded-md shadow-md"
+    const baseStyle = "absolute p-4 rounded-md"
     switch (overlayPosition) {
       case 'bottom':
         return `${baseStyle} bottom-4 left-4 right-4`
@@ -76,6 +81,22 @@ export default function Component() {
       default:
         return `${baseStyle} bottom-4 left-4 right-4`
     }
+  }
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    isDragging.current = true
+    dragStart.current = { x: e.clientX - imagePosition.x, y: e.clientY - imagePosition.y }
+  }
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDragging.current) return
+    const newX = e.clientX - dragStart.current.x
+    const newY = e.clientY - dragStart.current.y
+    setImagePosition({ x: newX, y: newY })
+  }
+
+  const handleMouseUp = () => {
+    isDragging.current = false
   }
 
   return (
@@ -96,14 +117,30 @@ export default function Component() {
         />
       </div>
 
-      <div className="mb-6 relative rounded-md overflow-hidden shadow-lg bg-gray-200 aspect-video">
+      <div 
+        className="mb-6 relative rounded-md overflow-hidden shadow-lg bg-gray-200 aspect-video"
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+      >
         {image ? (
-          <Image
-            src={image}
-            alt="Uploaded fitness activity"
-            layout="fill"
-            objectFit="cover"
-          />
+          <div 
+            ref={imageRef}
+            className="absolute inset-0"
+            style={{
+              transform: `translate(${imagePosition.x}px, ${imagePosition.y}px)`,
+              cursor: 'move'
+            }}
+          >
+            <Image
+              src={image}
+              alt="Uploaded fitness activity"
+              layout="fill"
+              objectFit="cover"
+              draggable={false}
+            />
+          </div>
         ) : (
           <div className="absolute inset-0 flex items-center justify-center text-gray-400">
             <Camera className="h-16 w-16" />
