@@ -31,6 +31,12 @@ const overlayPositions = [
   { value: 'top', label: 'Centered Top' },
 ]
 
+const iconPaths = {
+  ruler: "M1.5 9.5v-2h1v2h1v-3h1v3h1v-2h1v2h1v-3h1v3h1v-2h1v2h1v-3h1v3h1v-2h1v2h1v-3h1v3h1v-2h1v2h1v-3h1v3h1v-2h1v2h.5v1h-18v-1h.5z",
+  clock: "M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z M13 7h-2v5.414l3.293 3.293 1.414-1.414L13 11.586z",
+  mountain: "M22.5 17.25h-1.14l-4.95-8.4-3.69 6.3-2.67-4.59-4.32 6.69H3.5v1.5h19v-1.5zM6.72 15.75l2.19-3.39 2.61 4.49h-4.8zm5.72 0l2.45-4.21 2.79 4.21h-5.24z"
+}
+
 export default function Component() {
   const [image, setImage] = useState<string | null>(null)
   const [distance, setDistance] = useState('')
@@ -100,6 +106,15 @@ export default function Component() {
     isDragging.current = false
   }
 
+  const drawIcon = (ctx: CanvasRenderingContext2D, iconName: keyof typeof iconPaths, x: number, y: number, size: number) => {
+    const path = new Path2D(iconPaths[iconName])
+    ctx.save()
+    ctx.translate(x, y)
+    ctx.scale(size / 24, size / 24)  // The icons are designed for a 24x24 viewbox
+    ctx.fill(path)
+    ctx.restore()
+  }
+
   const downloadImage = useCallback(() => {
     if (!image || !canvasRef.current) return
 
@@ -119,13 +134,13 @@ export default function Component() {
       // Set up the overlay style
       ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'
       ctx.font = `16px ${selectedFont}`
-      ctx.textBaseline = 'top'
+      ctx.textBaseline = 'middle'
 
       // Calculate overlay position and size
       let overlayX, overlayY, overlayWidth, overlayHeight
       const padding = 20
       const lineHeight = 24
-      const textHeight = 3 * lineHeight
+      const textHeight = lineHeight
 
       switch (overlayPosition) {
         case 'bottom':
@@ -169,14 +184,36 @@ export default function Component() {
       ctx.shadowOffsetX = 0
       ctx.shadowOffsetY = 0
 
-      const textX = overlayX + padding
-      let textY = overlayY + padding
+      const textY = overlayY + overlayHeight / 2
 
-      ctx.fillText(`Distance: ${distance} km`, textX, textY)
-      textY += lineHeight
-      ctx.fillText(`Moving Time: ${movingTime}`, textX, textY)
-      textY += lineHeight
-      ctx.fillText(`Elevation Gain: ${elevationGain} m`, textX, textY)
+      // Calculate the width of each text item
+      const distanceText = `${distance} km`
+      const timeText = movingTime
+      const elevationText = `${elevationGain} m`
+
+      const distanceWidth = ctx.measureText(distanceText).width
+      const timeWidth = ctx.measureText(timeText).width
+      const elevationWidth = ctx.measureText(elevationText).width
+
+      const totalTextWidth = distanceWidth + timeWidth + elevationWidth
+      const spacing = (overlayWidth - totalTextWidth) / 4
+
+      // Draw the text items with proper spacing
+      let currentX = overlayX + spacing
+
+      // Distance
+      drawIcon(ctx, 'ruler', currentX - 20, textY - 8, 16)
+      ctx.fillText(distanceText, currentX, textY)
+      currentX += distanceWidth + spacing
+
+      // Time
+      drawIcon(ctx, 'clock', currentX - 20, textY - 8, 16)
+      ctx.fillText(timeText, currentX, textY)
+      currentX += timeWidth + spacing
+
+      // Elevation
+      drawIcon(ctx, 'mountain', currentX - 20, textY - 8, 16)
+      ctx.fillText(elevationText, currentX, textY)
 
       // Create download link
       const dataUrl = canvas.toDataURL('image/jpeg')
