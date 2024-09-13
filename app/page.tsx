@@ -75,7 +75,7 @@ export default function Component() {
   }
 
   const getOverlayStyle = () => {
-    const baseStyle = "absolute p-4 rounded-md"
+    const baseStyle = "absolute p-4 rounded-md text-white shadow-md"
     switch (overlayPosition) {
       case 'bottom':
         return `${baseStyle} bottom-4 left-4 right-4`
@@ -132,9 +132,11 @@ export default function Component() {
       ctx.drawImage(img, 0, 0)
 
       // Set up the overlay style
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'
       ctx.font = `16px ${selectedFont}`
       ctx.textBaseline = 'middle'
+      ctx.fillStyle = 'white'
+      ctx.strokeStyle = 'black'
+      ctx.lineWidth = 3
 
       // Calculate overlay position and size
       let overlayX, overlayY, overlayWidth, overlayHeight
@@ -174,16 +176,6 @@ export default function Component() {
           overlayY = canvas.height - overlayHeight - padding
       }
 
-      // Draw the overlay background
-      ctx.fillRect(overlayX, overlayY, overlayWidth, overlayHeight)
-
-      // Draw the text
-      ctx.fillStyle = 'white'
-      ctx.shadowColor = 'black'
-      ctx.shadowBlur = 4
-      ctx.shadowOffsetX = 0
-      ctx.shadowOffsetY = 0
-
       const textY = overlayY + overlayHeight / 2
 
       // Calculate the width of each text item
@@ -203,16 +195,19 @@ export default function Component() {
 
       // Distance
       drawIcon(ctx, 'ruler', currentX - 20, textY - 8, 16)
+      ctx.strokeText(distanceText, currentX, textY)
       ctx.fillText(distanceText, currentX, textY)
       currentX += distanceWidth + spacing
 
       // Time
       drawIcon(ctx, 'clock', currentX - 20, textY - 8, 16)
+      ctx.strokeText(timeText, currentX, textY)
       ctx.fillText(timeText, currentX, textY)
       currentX += timeWidth + spacing
 
       // Elevation
       drawIcon(ctx, 'mountain', currentX - 20, textY - 8, 16)
+      ctx.strokeText(elevationText, currentX, textY)
       ctx.fillText(elevationText, currentX, textY)
 
       // Create download link
