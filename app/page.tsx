@@ -43,10 +43,12 @@ export default function Component() {
   const [movingTime, setMovingTime] = useState('')
   const [elevationGain, setElevationGain] = useState('')
   const [selectedFont, setSelectedFont] = useState('arial')
+  const [selectedFontSize, setSelectedFontSize] = useState(64)
   const [overlayPosition, setOverlayPosition] = useState('bottom')
   const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 })
   const fileInputRef = useRef<HTMLInputElement>(null)
   const imageRef = useRef<HTMLDivElement>(null)
+  const previewRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const isDragging = useRef(false)
   const dragStart = useRef({ x: 0, y: 0 })
@@ -56,8 +58,8 @@ export default function Component() {
     if (file) {
       Resizer.imageFileResizer(
         file,
-        1200,
-        1200,
+        1600,
+        1600,
         'JPEG',
         80,
         0,
@@ -97,8 +99,19 @@ export default function Component() {
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!isDragging.current) return
-    const newX = e.clientX - dragStart.current.x
-    const newY = e.clientY - dragStart.current.y
+    let newX = e.clientX - dragStart.current.x
+    let newY = e.clientY - dragStart.current.y
+  
+    // Restrict movement to within image-preview container
+    const previewRect = previewRef.current?.getBoundingClientRect()
+    const imageRect = imageRef.current?.getBoundingClientRect()
+    if (imageRect && previewRect) {
+      if (newX < 0) newX = 0
+      if (newX + imageRect.width > previewRect.width) newX = previewRect.width - imageRect.width
+      if (newY < 0) newY = 0
+      if (newY + imageRect.height > previewRect.height) newY = previewRect.height - imageRect.height
+    }
+  
     setImagePosition({ x: newX, y: newY })
   }
 
@@ -132,7 +145,7 @@ export default function Component() {
       ctx.drawImage(img, 0, 0)
 
       // Set up the overlay style
-      ctx.font = `16px ${selectedFont}`
+      ctx.font = `${selectedFontSize}px ${selectedFont}`
       ctx.textBaseline = 'middle'
       ctx.fillStyle = 'white'
       ctx.strokeStyle = 'black'
@@ -244,6 +257,7 @@ export default function Component() {
 
       <div 
         id="image-preview"
+        ref={previewRef}
         className="mb-6 relative rounded-md overflow-hidden shadow-lg bg-gray-200 aspect-video"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
@@ -264,6 +278,7 @@ export default function Component() {
               alt="Uploaded fitness activity"
               layout="fill"
               objectFit="cover"
+              className="w-full h-auto"
               draggable={false}
             />
           </div>
@@ -276,7 +291,7 @@ export default function Component() {
           <div
             id="overlay"
             className={getOverlayStyle()}
-            style={{ fontFamily: selectedFont }}
+            style={{ fontFamily: selectedFont, fontSize: selectedFontSize + 'px' }}
           >
             <div className="flex items-center justify-between text-enhance">
               <span className="distance flex items-center"><Ruler className="mr-1 h-4 w-4" />{distance} km</span>
