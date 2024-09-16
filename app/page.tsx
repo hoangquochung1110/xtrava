@@ -255,16 +255,16 @@ export default function Component() {
         />
       </div>
 
-      <div 
-        id="image-preview"
-        ref={previewRef}
-        className="mb-6 relative rounded-md overflow-hidden shadow-lg bg-gray-200 aspect-video"
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
-      >
-        {image ? (
+      {image && (
+        <div 
+          id="image-preview"
+          ref={previewRef}
+          className="mb-6 relative rounded-md overflow-hidden shadow-lg bg-gray-200 aspect-video"
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+        >
           <div 
             ref={imageRef}
             className="image-container absolute inset-0"
@@ -282,12 +282,6 @@ export default function Component() {
               draggable={false}
             />
           </div>
-        ) : (
-          <div className="placeholder absolute inset-0 flex items-center justify-center text-gray-400">
-            <Camera className="h-16 w-16" />
-          </div>
-        )}
-        {image && (
           <div
             id="overlay"
             className={getOverlayStyle()}
@@ -299,8 +293,8 @@ export default function Component() {
               <span className="elevation flex items-center"><Mountain className="mr-1 h-4 w-4" />{elevationGain} m</span>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       <canvas ref={canvasRef} className="hidden" />
 
