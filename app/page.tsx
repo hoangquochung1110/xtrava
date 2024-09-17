@@ -2,7 +2,6 @@
 
 import React, { useState, useRef, ChangeEvent, useCallback } from 'react'
 import Image from 'next/image'
-import Resizer from 'react-image-file-resizer'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -39,36 +38,29 @@ const iconPaths = {
 
 export default function Component() {
   const [image, setImage] = useState<string | null>(null)
+  const [imageSize, setImageSize] = useState({ width: 0, height: 0 })
   const [distance, setDistance] = useState('')
   const [movingTime, setMovingTime] = useState('')
   const [elevationGain, setElevationGain] = useState('')
   const [selectedFont, setSelectedFont] = useState('arial')
-  const [selectedFontSize, setSelectedFontSize] = useState(64)
+  const [selectedFontSize, setSelectedFontSize] = useState(24)
   const [overlayPosition, setOverlayPosition] = useState('bottom')
-  const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 })
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const imageRef = useRef<HTMLDivElement>(null)
-  const previewRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const isDragging = useRef(false)
-  const dragStart = useRef({ x: 0, y: 0 })
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
-      Resizer.imageFileResizer(
-        file,
-        1600,
-        1600,
-        'JPEG',
-        80,
-        0,
-        (uri) => {
-          setImage(uri as string)
-          setImagePosition({ x: 0, y: 0 }) // Reset position when new image is uploaded
-        },
-        'base64'
-      )
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const img = new window.Image()
+        img.onload = () => {
+          setImageSize({ width: img.width, height: img.height })
+          setImage(img.src)
+        }
+        img.src = e.target?.result as string
+      }
+      reader.readAsDataURL(file)
     }
   }
 
@@ -90,33 +82,6 @@ export default function Component() {
       default:
         return `${baseStyle} bottom-4 left-4 right-4`
     }
-  }
-
-  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    isDragging.current = true
-    dragStart.current = { x: e.clientX - imagePosition.x, y: e.clientY - imagePosition.y }
-  }
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isDragging.current) return
-    let newX = e.clientX - dragStart.current.x
-    let newY = e.clientY - dragStart.current.y
-  
-    // Restrict movement to within image-preview container
-    const previewRect = previewRef.current?.getBoundingClientRect()
-    const imageRect = imageRef.current?.getBoundingClientRect()
-    if (imageRect && previewRect) {
-      if (newX < 0) newX = 0
-      if (newX + imageRect.width > previewRect.width) newX = previewRect.width - imageRect.width
-      if (newY < 0) newY = 0
-      if (newY + imageRect.height > previewRect.height) newY = previewRect.height - imageRect.height
-    }
-  
-    setImagePosition({ x: newX, y: newY })
-  }
-
-  const handleMouseUp = () => {
-    isDragging.current = false
   }
 
   const drawIcon = (ctx: CanvasRenderingContext2D, iconName: keyof typeof iconPaths, x: number, y: number, size: number) => {
@@ -149,12 +114,12 @@ export default function Component() {
       ctx.textBaseline = 'middle'
       ctx.fillStyle = 'white'
       ctx.strokeStyle = 'black'
-      ctx.lineWidth = 3
+      ctx.lineWidth = selectedFontSize / 12 // Adjust stroke width based on font size
 
       // Calculate overlay position and size
       let overlayX, overlayY, overlayWidth, overlayHeight
       const padding = 20
-      const lineHeight = 24
+      const lineHeight = selectedFontSize * 1.2
       const textHeight = lineHeight
 
       switch (overlayPosition) {
@@ -207,19 +172,19 @@ export default function Component() {
       let currentX = overlayX + spacing
 
       // Distance
-      drawIcon(ctx, 'ruler', currentX - 20, textY - 8, 16)
+      drawIcon(ctx, 'ruler', currentX - selectedFontSize, textY - selectedFontSize / 2, selectedFontSize)
       ctx.strokeText(distanceText, currentX, textY)
       ctx.fillText(distanceText, currentX, textY)
       currentX += distanceWidth + spacing
 
       // Time
-      drawIcon(ctx, 'clock', currentX - 20, textY - 8, 16)
+      drawIcon(ctx, 'clock', currentX - selectedFontSize, textY - selectedFontSize / 2, selectedFontSize)
       ctx.strokeText(timeText, currentX, textY)
       ctx.fillText(timeText, currentX, textY)
       currentX += timeWidth + spacing
 
       // Elevation
-      drawIcon(ctx, 'mountain', currentX - 20, textY - 8, 16)
+      drawIcon(ctx, 'mountain', currentX - selectedFontSize, textY - selectedFontSize / 2, selectedFontSize)
       ctx.strokeText(elevationText, currentX, textY)
       ctx.fillText(elevationText, currentX, textY)
 
@@ -231,10 +196,10 @@ export default function Component() {
       link.click()
     }
     img.src = image
-  }, [image, distance, movingTime, elevationGain, selectedFont, overlayPosition])
+  }, [image, distance, movingTime, elevationGain, selectedFont, selectedFontSize, overlayPosition])
 
   return (
-    <div id="fitness-activity-showcase" className="container mx-auto p-4 max-w-3xl bg-gray-100 min-h-screen">
+    <div id="fitness-activity-showcase" className="container mx-auto p-4 max-w-full bg-gray-100 min-h-screen">
       <h1 className="text-3xl font-bold mb-6 text-center text-gray-800">Fitness Activity Showcase</h1>
       
       <div id="upload-download-buttons" className="mb-6 text-center space-x-4">
@@ -255,22 +220,16 @@ export default function Component() {
         />
       </div>
 
-      {image && (
-        <div 
-          id="image-preview"
-          ref={previewRef}
-          className="mb-6 relative rounded-md overflow-hidden shadow-lg bg-gray-200 aspect-video"
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
-        >
+      <div className="mb-6">
+        {image && (
           <div 
-            ref={imageRef}
-            className="image-container absolute inset-0"
+            id="image-preview"
+            className="relative rounded-md overflow-hidden shadow-lg bg-gray-200 mx-auto"
             style={{
-              transform: `translate(${imagePosition.x}px, ${imagePosition.y}px)`,
-              cursor: 'move'
+              width: '100%',
+              maxWidth: '800px',
+              height: '0',
+              paddingBottom: `${(imageSize.height / imageSize.width) * 100}%`,
             }}
           >
             <Image
@@ -278,23 +237,21 @@ export default function Component() {
               alt="Uploaded fitness activity"
               layout="fill"
               objectFit="cover"
-              className="w-full h-auto"
-              draggable={false}
             />
-          </div>
-          <div
-            id="overlay"
-            className={getOverlayStyle()}
-            style={{ fontFamily: selectedFont, fontSize: selectedFontSize + 'px' }}
-          >
-            <div className="flex items-center justify-between text-enhance">
-              <span className="distance flex items-center"><Ruler className="mr-1 h-4 w-4" />{distance} km</span>
-              <span className="time flex items-center"><Clock className="mr-1 h-4 w-4" />{movingTime}</span>
-              <span className="elevation flex items-center"><Mountain className="mr-1 h-4 w-4" />{elevationGain} m</span>
+            <div
+              id="overlay"
+              className={getOverlayStyle()}
+              style={{ fontFamily: selectedFont, fontSize: `${selectedFontSize}px` }}
+            >
+              <div className="flex items-center justify-between text-enhance">
+                <span className="distance flex items-center"><Ruler className="mr-1 h-4 w-4" />{distance} km</span>
+                <span className="time flex items-center"><Clock className="mr-1 h-4 w-4" />{movingTime}</span>
+                <span className="elevation flex items-center"><Mountain className="mr-1 h-4 w-4" />{elevationGain} m</span>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       <canvas ref={canvasRef} className="hidden" />
 
@@ -347,6 +304,19 @@ export default function Component() {
             </SelectContent>
           </Select>
         </div>
+      </div>
+
+      <div id="font-size-control" className="mb-6">
+        <Label htmlFor="fontSize" className="text-gray-700">Font Size</Label>
+        <Input
+          id="fontSize"
+          type="number"
+          value={selectedFontSize}
+          onChange={(e) => setSelectedFontSize(Number(e.target.value))}
+          min="12"
+          max="72"
+          className="border-gray-300 focus:border-gray-500"
+        />
       </div>
 
       <div id="overlay-position" className="mb-6 bg-white p-4 rounded-md shadow-md">
