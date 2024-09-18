@@ -106,20 +106,23 @@ export default function Component() {
       canvas.width = img.width
       canvas.height = img.height
 
+      // Calculate the scale factor
+      const scaleFactor = Math.max(1, Math.min(canvas.width, canvas.height) / 800)
+
       // Draw the image
       ctx.drawImage(img, 0, 0)
 
       // Set up the overlay style
-      ctx.font = `${selectedFontSize}px ${selectedFont}`
+      const scaledFontSize = selectedFontSize * scaleFactor
+      ctx.font = `${scaledFontSize}px ${selectedFont}`
       ctx.textBaseline = 'middle'
       ctx.fillStyle = 'white'
       ctx.strokeStyle = 'black'
-      ctx.lineWidth = selectedFontSize / 12 // Adjust stroke width based on font size
 
       // Calculate overlay position and size
       let overlayX, overlayY, overlayWidth, overlayHeight
-      const padding = 20
-      const lineHeight = selectedFontSize * 1.2
+      const padding = 20 * scaleFactor
+      const lineHeight = scaledFontSize * 1.2
       const textHeight = lineHeight
 
       switch (overlayPosition) {
@@ -172,19 +175,19 @@ export default function Component() {
       let currentX = overlayX + spacing
 
       // Distance
-      drawIcon(ctx, 'ruler', currentX - selectedFontSize, textY - selectedFontSize / 2, selectedFontSize)
+      drawIcon(ctx, 'ruler', currentX - scaledFontSize, textY - scaledFontSize / 2, scaledFontSize)
       ctx.strokeText(distanceText, currentX, textY)
       ctx.fillText(distanceText, currentX, textY)
       currentX += distanceWidth + spacing
 
       // Time
-      drawIcon(ctx, 'clock', currentX - selectedFontSize, textY - selectedFontSize / 2, selectedFontSize)
+      drawIcon(ctx, 'clock', currentX - scaledFontSize, textY - scaledFontSize / 2, scaledFontSize)
       ctx.strokeText(timeText, currentX, textY)
       ctx.fillText(timeText, currentX, textY)
       currentX += timeWidth + spacing
 
       // Elevation
-      drawIcon(ctx, 'mountain', currentX - selectedFontSize, textY - selectedFontSize / 2, selectedFontSize)
+      drawIcon(ctx, 'mountain', currentX - scaledFontSize, textY - scaledFontSize / 2, scaledFontSize)
       ctx.strokeText(elevationText, currentX, textY)
       ctx.fillText(elevationText, currentX, textY)
 
