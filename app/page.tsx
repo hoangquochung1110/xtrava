@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Camera, Clock, Download, Mountain, Ruler } from 'lucide-react'
+import { Camera, Download } from 'lucide-react'
 
 const fontOptions = [
   { value: 'arial', label: 'Arial' },
@@ -23,6 +23,12 @@ const fontOptions = [
   { value: 'verdana', label: 'Verdana' },
 ]
 
+const fontSizeOptions = [
+  { value: 28, label: '28px' },
+  { value: 32, label: '32px' },
+  { value: 36, label: '36px' },
+]
+
 const overlayPositions = [
   { value: 'bottom', label: 'Centered Bottom' },
   { value: 'left', label: 'Centered Left' },
@@ -30,10 +36,28 @@ const overlayPositions = [
   { value: 'top', label: 'Centered Top' },
 ]
 
+const iconSizes = {
+  28: { width: 28, height: 28 },
+  32: { width: 32, height: 32 },
+  36: { width: 36, height: 36 },
+}
+
 const iconPaths = {
-  ruler: "M1.5 9.5v-2h1v2h1v-3h1v3h1v-2h1v2h1v-3h1v3h1v-2h1v2h1v-3h1v3h1v-2h1v2h1v-3h1v3h1v-2h1v2h1v-3h1v3h1v-2h1v2h.5v1h-18v-1h.5z",
-  clock: "M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z M13 7h-2v5.414l3.293 3.293 1.414-1.414L13 11.586z",
-  mountain: "M22.5 17.25h-1.14l-4.95-8.4-3.69 6.3-2.67-4.59-4.32 6.69H3.5v1.5h19v-1.5zM6.72 15.75l2.19-3.39 2.61 4.49h-4.8zm5.72 0l2.45-4.21 2.79 4.21h-5.24z"
+  ruler: {
+    28: "/icons/ruler-28.svg",
+    32: "/icons/ruler-32.svg",
+    36: "/icons/ruler-36.svg",
+  },
+  clock: {
+    28: "/icons/clock-28.svg",
+    32: "/icons/clock-32.svg",
+    36: "/icons/clock-36.svg",
+  },
+  mountain: {
+    28: "/icons/mountain-28.svg",
+    32: "/icons/mountain-32.svg",
+    36: "/icons/mountain-36.svg",
+  },
 }
 
 export default function Component() {
@@ -43,7 +67,7 @@ export default function Component() {
   const [movingTime, setMovingTime] = useState('')
   const [elevationGain, setElevationGain] = useState('')
   const [selectedFont, setSelectedFont] = useState('arial')
-  const [selectedFontSize, setSelectedFontSize] = useState(24)
+  const [selectedFontSize, setSelectedFontSize] = useState(32)
   const [overlayPosition, setOverlayPosition] = useState('bottom')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -84,15 +108,6 @@ export default function Component() {
     }
   }
 
-  const drawIcon = (ctx: CanvasRenderingContext2D, iconName: keyof typeof iconPaths, x: number, y: number, size: number) => {
-    const path = new Path2D(iconPaths[iconName])
-    ctx.save()
-    ctx.translate(x, y)
-    ctx.scale(size / 24, size / 24)  // The icons are designed for a 24x24 viewbox
-    ctx.fill(path)
-    ctx.restore()
-  }
-
   const downloadImage = useCallback(() => {
     if (!image || !canvasRef.current) return
 
@@ -106,23 +121,19 @@ export default function Component() {
       canvas.width = img.width
       canvas.height = img.height
 
-      // Calculate the scale factor
-      const scaleFactor = Math.max(1, Math.min(canvas.width, canvas.height) / 800)
-
       // Draw the image
       ctx.drawImage(img, 0, 0)
 
       // Set up the overlay style
-      const scaledFontSize = selectedFontSize * scaleFactor
-      ctx.font = `${scaledFontSize}px ${selectedFont}`
+      ctx.font = `${selectedFontSize}px ${selectedFont}`
       ctx.textBaseline = 'middle'
       ctx.fillStyle = 'white'
       ctx.strokeStyle = 'black'
 
       // Calculate overlay position and size
       let overlayX, overlayY, overlayWidth, overlayHeight
-      const padding = 20 * scaleFactor
-      const lineHeight = scaledFontSize * 1.2
+      const padding = 20
+      const lineHeight = selectedFontSize * 1.2
       const textHeight = lineHeight
 
       switch (overlayPosition) {
@@ -171,32 +182,59 @@ export default function Component() {
       const totalTextWidth = distanceWidth + timeWidth + elevationWidth
       const spacing = (overlayWidth - totalTextWidth) / 4
 
-      // Draw the text items with proper spacing
-      let currentX = overlayX + spacing
+      // Function to load and draw SVG icons as raster images
+      const loadAndDrawIcon = (src: string, x: number, y: number, width: number, height: number) => {
+        return new Promise<void>((resolve) => {
+          const iconImg = new window.Image()
+          iconImg.onload = () => {
+            // Create an off-screen canvas
+            const offscreenCanvas = document.createElement('canvas')
+            offscreenCanvas.width = width
+            offscreenCanvas.height = height
+            const offscreenCtx = offscreenCanvas.getContext('2d')
+            if (offscreenCtx) {
+              // Draw the SVG on the off-screen canvas
+              offscreenCtx.drawImage(iconImg, 0, 0, width, height)
+              // Draw the off-screen canvas onto the main canvas
+              ctx.drawImage(offscreenCanvas, x, y, width, height)
+            }
+            resolve()
+          }
+          iconImg.src = src
+        })
+      }
 
-      // Distance
-      drawIcon(ctx, 'ruler', currentX - scaledFontSize, textY - scaledFontSize / 2, scaledFontSize)
-      ctx.strokeText(distanceText, currentX, textY)
-      ctx.fillText(distanceText, currentX, textY)
-      currentX += distanceWidth + spacing
+      // Load and draw icons, then add text
+      const iconSize = iconSizes[selectedFontSize as keyof typeof iconSizes]
+      Promise.all([
+        loadAndDrawIcon(iconPaths.ruler[selectedFontSize as keyof typeof iconPaths.ruler], overlayX + spacing - iconSize.width - 5, textY - iconSize.height / 2, iconSize.width, iconSize.height),
+        loadAndDrawIcon(iconPaths.clock[selectedFontSize as keyof typeof iconPaths.clock], overlayX + spacing + distanceWidth + spacing - iconSize.width - 5, textY - iconSize.height / 2, iconSize.width, iconSize.height),
+        loadAndDrawIcon(iconPaths.mountain[selectedFontSize as keyof typeof iconPaths.mountain], overlayX + spacing + distanceWidth + spacing + timeWidth + spacing - iconSize.width - 5, textY - iconSize.height / 2, iconSize.width, iconSize.height)
+      ]).then(() => {
+        // Draw text
+        let currentX = overlayX + spacing
 
-      // Time
-      drawIcon(ctx, 'clock', currentX - scaledFontSize, textY - scaledFontSize / 2, scaledFontSize)
-      ctx.strokeText(timeText, currentX, textY)
-      ctx.fillText(timeText, currentX, textY)
-      currentX += timeWidth + spacing
+        // Distance
+        ctx.strokeText(distanceText, currentX, textY)
+        ctx.fillText(distanceText, currentX, textY)
+        currentX += distanceWidth + spacing
 
-      // Elevation
-      drawIcon(ctx, 'mountain', currentX - scaledFontSize, textY - scaledFontSize / 2, scaledFontSize)
-      ctx.strokeText(elevationText, currentX, textY)
-      ctx.fillText(elevationText, currentX, textY)
+        // Time
+        ctx.strokeText(timeText, currentX, textY)
+        ctx.fillText(timeText, currentX, textY)
+        currentX += timeWidth + spacing
 
-      // Create download link
-      const dataUrl = canvas.toDataURL('image/jpeg')
-      const link = document.createElement('a')
-      link.href = dataUrl
-      link.download = 'fitness_activity.jpg'
-      link.click()
+        // Elevation
+        ctx.strokeText(elevationText, currentX, textY)
+        ctx.fillText(elevationText, currentX, textY)
+
+        // Create download link
+        const dataUrl = canvas.toDataURL('image/jpeg')
+        const link = document.createElement('a')
+        link.href = dataUrl
+        link.download = 'fitness_activity.jpg'
+        link.click()
+      })
     }
     img.src = image
   }, [image, distance, movingTime, elevationGain, selectedFont, selectedFontSize, overlayPosition])
@@ -247,9 +285,18 @@ export default function Component() {
               style={{ fontFamily: selectedFont, fontSize: `${selectedFontSize}px` }}
             >
               <div className="flex items-center justify-between text-enhance">
-                <span className="distance flex items-center"><Ruler className="mr-1 h-4 w-4" />{distance} km</span>
-                <span className="time flex items-center"><Clock className="mr-1 h-4 w-4" />{movingTime}</span>
-                <span className="elevation flex items-center"><Mountain className="mr-1 h-4 w-4" />{elevationGain} m</span>
+                <span className="distance flex items-center">
+                  <Image src={iconPaths.ruler[selectedFontSize as keyof typeof iconPaths.ruler]} alt="Ruler" width={iconSizes[selectedFontSize as keyof typeof iconSizes].width} height={iconSizes[selectedFontSize as keyof typeof iconSizes].height} className="mr-1" />
+                  {distance} km
+                </span>
+                <span className="time flex items-center">
+                  <Image src={iconPaths.clock[selectedFontSize as keyof typeof iconPaths.clock]} alt="Clock" width={iconSizes[selectedFontSize as keyof typeof iconSizes].width} height={iconSizes[selectedFontSize as keyof typeof iconSizes].height} className="mr-1" />
+                  {movingTime}
+                </span>
+                <span className="elevation flex items-center">
+                  <Image src={iconPaths.mountain[selectedFontSize as keyof typeof iconPaths.mountain]} alt="Mountain" width={iconSizes[selectedFontSize as keyof typeof iconSizes].width} height={iconSizes[selectedFontSize as keyof typeof iconSizes].height} className="mr-1" />
+                  {elevationGain} m
+                </span>
               </div>
             </div>
           </div>
@@ -311,15 +358,18 @@ export default function Component() {
 
       <div id="font-size-control" className="mb-6">
         <Label htmlFor="fontSize" className="text-gray-700">Font Size</Label>
-        <Input
-          id="fontSize"
-          type="number"
-          value={selectedFontSize}
-          onChange={(e) => setSelectedFontSize(Number(e.target.value))}
-          min="12"
-          max="72"
-          className="border-gray-300 focus:border-gray-500"
-        />
+        <Select onValueChange={(value) => setSelectedFontSize(Number(value))} defaultValue={selectedFontSize.toString()}>
+          <SelectTrigger id="font-size-select" className="w-full border-gray-300 focus:border-gray-500">
+            <SelectValue placeholder="Select a font size" />
+          </SelectTrigger>
+          <SelectContent>
+            {fontSizeOptions.map((option) => (
+              <SelectItem key={option.value} value={option.value.toString()}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div id="overlay-position" className="mb-6 bg-white p-4 rounded-md shadow-md">
