@@ -137,7 +137,7 @@ export default function Component() {
       // Calculate overlay position and size
       let overlayX, overlayY, overlayWidth, overlayHeight
       const padding = 20 * scaleFactor
-      const lineHeight = selectedFontSize * 1.2
+      const lineHeight = scaledFontSize * 1.2
       const textHeight = lineHeight
 
       switch (overlayPosition) {
@@ -209,11 +209,15 @@ export default function Component() {
       }
 
       // Load and draw icons, then add text
-      const iconSize = iconSizes[selectedFontSize as keyof typeof iconSizes]
+      const baseIconSize = iconSizes[selectedFontSize as keyof typeof iconSizes]
+      const scaledIconSize = {
+        width: baseIconSize.width * scaleFactor,
+        height: baseIconSize.height * scaleFactor
+      }
       Promise.all([
-        loadAndDrawIcon(iconPaths.ruler[selectedFontSize as keyof typeof iconPaths.ruler], overlayX + spacing - iconSize.width - 5, textY - iconSize.height / 2, iconSize.width, iconSize.height),
-        loadAndDrawIcon(iconPaths.clock[selectedFontSize as keyof typeof iconPaths.clock], overlayX + spacing + distanceWidth + spacing - iconSize.width - 5, textY - iconSize.height / 2, iconSize.width, iconSize.height),
-        loadAndDrawIcon(iconPaths.mountain[selectedFontSize as keyof typeof iconPaths.mountain], overlayX + spacing + distanceWidth + spacing + timeWidth + spacing - iconSize.width - 5, textY - iconSize.height / 2, iconSize.width, iconSize.height)
+        loadAndDrawIcon(iconPaths.ruler[selectedFontSize as keyof typeof iconPaths.ruler], overlayX + spacing - scaledIconSize.width - 5 * scaleFactor, textY - scaledIconSize.height / 2, scaledIconSize.width, scaledIconSize.height),
+        loadAndDrawIcon(iconPaths.clock[selectedFontSize as keyof typeof iconPaths.clock], overlayX + spacing + distanceWidth + spacing - scaledIconSize.width - 5 * scaleFactor, textY - scaledIconSize.height / 2, scaledIconSize.width, scaledIconSize.height),
+        loadAndDrawIcon(iconPaths.mountain[selectedFontSize as keyof typeof iconPaths.mountain], overlayX + spacing + distanceWidth + spacing + timeWidth + spacing - scaledIconSize.width - 5 * scaleFactor, textY - scaledIconSize.height / 2, scaledIconSize.width, scaledIconSize.height)
       ]).then(() => {
         // Draw text
         let currentX = overlayX + spacing
