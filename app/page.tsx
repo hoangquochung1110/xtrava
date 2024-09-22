@@ -121,18 +121,22 @@ export default function Component() {
       canvas.width = img.width
       canvas.height = img.height
 
+      // Calculate the scale factor
+      const scaleFactor = Math.max(1, Math.min(canvas.width, canvas.height) / 800)
+
       // Draw the image
       ctx.drawImage(img, 0, 0)
 
       // Set up the overlay style
-      ctx.font = `${selectedFontSize}px ${selectedFont}`
+      const scaledFontSize = selectedFontSize * scaleFactor
+      ctx.font = `${scaledFontSize}px ${selectedFont}`
       ctx.textBaseline = 'middle'
       ctx.fillStyle = 'white'
       ctx.strokeStyle = 'black'
 
       // Calculate overlay position and size
       let overlayX, overlayY, overlayWidth, overlayHeight
-      const padding = 20
+      const padding = 20 * scaleFactor
       const lineHeight = selectedFontSize * 1.2
       const textHeight = lineHeight
 
